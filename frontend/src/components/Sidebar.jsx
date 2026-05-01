@@ -55,7 +55,7 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {
         )}
       </ul>
 
-      <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <NavLink to="/profile" onClick={closeSidebar} className={({isActive}) => isActive ? "nav-item active" : "nav-item"}>
           <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
             {user?.profilePicture ? <img src={user.profilePicture} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : user?.name?.charAt(0) || 'U'}
@@ -64,15 +64,14 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {
         </NavLink>
         <button 
           onClick={handleLogout} 
-          className="nav-item" 
+          className="nav-item logout-btn-sidebar" 
           style={{ 
             width: '100%', 
             background: 'rgba(239, 68, 68, 0.1)', 
             border: 'none', 
             cursor: 'pointer', 
             textAlign: 'left',
-            color: '#F87171',
-            marginTop: '0.5rem'
+            color: '#F87171'
           }}
         >
           <LogOut size={20} /> Logout
