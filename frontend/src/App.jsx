@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Sidebar from './components/Sidebar';
+import Profile from './pages/Profile';
 import './index.css';
 
 import { Menu } from 'lucide-react';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/projects" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/tasks" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/team" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

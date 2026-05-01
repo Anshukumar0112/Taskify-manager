@@ -149,6 +149,20 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+router.put('/me', auth, async (req, res) => {
+  try {
+    const { name, email, profilePicture } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user.id, 
+      { name, email, profilePicture },
+      { new: true, runValidators: true }
+    ).select('-password').populate('organization');
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/users', auth, async (req, res) => {
   try {
     const query = req.user.organization ? { organization: req.user.organization } : {};

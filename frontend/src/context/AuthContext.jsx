@@ -54,8 +54,8 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const updateProfile = async (name, email) => {
-    const res = await axios.put(`${API_URL}/auth/me`, { name, email });
+  const updateProfile = async (name, email, profilePicture) => {
+    const res = await axios.put(`${API_URL}/auth/me`, { name, email, profilePicture });
     setUser(res.data);
   };
 
