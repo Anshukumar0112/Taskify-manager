@@ -49,6 +49,20 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const project = await Project.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', auth, isAdmin, async (req, res) => {
   try {
     const project = await Project.findOneAndDelete({ _id: req.params.id, organization: req.user.organization });

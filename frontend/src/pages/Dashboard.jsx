@@ -18,7 +18,8 @@ import {
   Sparkles,
   ChevronRight,
   Building,
-  X
+  X,
+  Star
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -32,7 +33,7 @@ const Dashboard = () => {
   const [monitorView, setMonitorView] = useState('all'); 
   const [reportModal, setReportModal] = useState({ show: false, type: '', title: '', data: [] });
   const [createModal, setCreateModal] = useState({ show: false, type: '' });
-  const [formData, setFormData] = useState({ name: '', description: '', title: '', projectId: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', title: '', projectId: '', assignee: '', dueDate: '', email: '', password: '', role: 'Member' });
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -42,14 +43,77 @@ const Dashboard = () => {
         const res = await axios.post(`${API_URL}/projects`, { name: formData.name, description: formData.description }, config);
         setProjects([...projects, res.data]);
       } else if (createModal.type === 'task') {
-        const res = await axios.post(`${API_URL}/tasks`, { title: formData.title, project: formData.projectId, status: 'To Do', assignee: user.id }, config);
+        const payload = { 
+          title: formData.title, 
+          project: formData.projectId, 
+          status: 'To Do', 
+          assignee: formData.assignee || user.id 
+        };
+        if (formData.dueDate) payload.dueDate = formData.dueDate;
+        
+        const res = await axios.post(`${API_URL}/tasks`, payload, config);
         setTasks([res.data, ...tasks]);
         setAllTasks([res.data, ...allTasks]);
+      } else if (createModal.type === 'invite') {
+        const payload = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          orgId: user.organization
+        };
+        const res = await axios.post(`${API_URL}/auth/register`, payload);
+        setTeamUsers([...teamUsers, res.data.user]);
+        alert('Member invited successfully!');
       }
       setCreateModal({ show: false, type: '' });
-      setFormData({ name: '', description: '', title: '', projectId: '' });
+      setFormData({ name: '', description: '', title: '', projectId: '', assignee: '', dueDate: '', email: '', password: '', role: 'Member' });
     } catch (err) {
       alert('Error creating item. ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
+      const res = await axios.put(`${API_URL}/tasks/${taskId}`, { status: newStatus }, config);
+      setTasks(tasks.map(t => t._id === taskId ? res.data : t));
+      setAllTasks(allTasks.map(t => t._id === taskId ? res.data : t));
+    } catch (err) {
+      alert('Error updating status: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
+      await axios.delete(`${API_URL}/tasks/${taskId}`, config);
+      setTasks(tasks.filter(t => t._id !== taskId));
+      setAllTasks(allTasks.filter(t => t._id !== taskId));
+    } catch (err) {
+      alert('Error deleting task: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeleteProject = async (projectId) => {
+    if (!window.confirm('Are you sure you want to delete this project?')) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
+      await axios.delete(`${API_URL}/projects/${projectId}`, config);
+      setProjects(projects.filter(p => p._id !== projectId));
+    } catch (err) {
+      alert('Error deleting project: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleToggleStarProject = async (projectId, currentStatus) => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
+      const res = await axios.put(`${API_URL}/projects/${projectId}`, { isStarred: !currentStatus }, config);
+      setProjects(projects.map(p => p._id === projectId ? { ...p, isStarred: !currentStatus } : p));
+    } catch (err) {
+      alert('Error updating project: ' + (err.response?.data?.message || err.message));
     }
   };
   
@@ -154,7 +218,7 @@ const Dashboard = () => {
         <div className="modal-overlay" onClick={() => setCreateModal({ show: false, type: '' })}>
            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
               <div className="modal-header">
-                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>{createModal.type === 'project' ? 'New Project' : 'New Task'}</h2>
+                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>{createModal.type === 'project' ? 'New Project' : createModal.type === 'invite' ? 'Invite Member' : 'New Task'}</h2>
                  <button onClick={() => setCreateModal({ show: false, type: '' })} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={20} color="#64748B"/></button>
               </div>
               <div className="modal-body">
@@ -170,6 +234,28 @@ const Dashboard = () => {
                            <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box', minHeight: '80px' }} placeholder="Briefly describe the project..." />
                         </div>
                       </>
+                    ) : createModal.type === 'invite' ? (
+                      <>
+                        <div>
+                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, fontSize: '0.9rem' }}>Name</label>
+                           <input autoFocus required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box' }} placeholder="e.g. John Doe" />
+                        </div>
+                        <div>
+                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, fontSize: '0.9rem' }}>Email</label>
+                           <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box' }} placeholder="e.g. john@team.com" />
+                        </div>
+                        <div>
+                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, fontSize: '0.9rem' }}>Temporary Password</label>
+                           <input required type="text" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box' }} placeholder="Set a temporary password" />
+                        </div>
+                        <div>
+                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, fontSize: '0.9rem' }}>Role</label>
+                           <select required value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box' }}>
+                              <option value="Member">Member</option>
+                              <option value="Admin">Admin</option>
+                           </select>
+                        </div>
+                      </>
                     ) : (
                       <>
                         <div>
@@ -183,9 +269,20 @@ const Dashboard = () => {
                               {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                            </select>
                         </div>
+                        <div>
+                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, fontSize: '0.9rem' }}>Assign To</label>
+                           <select value={formData.assignee} onChange={e => setFormData({...formData, assignee: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box' }}>
+                              <option value="">Select team member...</option>
+                              {teamUsers.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                           </select>
+                        </div>
+                        <div>
+                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, fontSize: '0.9rem' }}>Deadline</label>
+                           <input type="date" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', boxSizing: 'border-box' }} />
+                        </div>
                       </>
                     )}
-                    <button type="submit" className="btn-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>Create {createModal.type === 'project' ? 'Project' : 'Task'}</button>
+                    <button type="submit" className="btn-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>{createModal.type === 'project' ? 'Create Project' : createModal.type === 'invite' ? 'Send Invite' : 'Create Task'}</button>
                  </form>
               </div>
            </div>
@@ -335,10 +432,28 @@ const Dashboard = () => {
                           <CheckSquare size={20} color="var(--accent)" />
                           <div>
                             <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{t.title}</div>
-                            <div className="text-muted" style={{ fontSize: '0.85rem' }}>{t.project?.name}</div>
+                            <div className="text-muted" style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                               <span>{t.project?.name}</span>
+                               {t.assignee && <span style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>👤 {t.assignee.name}</span>}
+                            </div>
                           </div>
                        </div>
-                       <span className={`status-badge status-${t.status?.toLowerCase().replace(' ', '') || 'todo'}`}>{t.status}</span>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                         <select 
+                            value={t.status} 
+                            onChange={(e) => handleStatusChange(t._id, e.target.value)}
+                            className={`status-badge status-${t.status?.toLowerCase().replace(' ', '') || 'todo'}`}
+                            style={{ border: 'none', cursor: 'pointer', outline: 'none' }}
+                            onClick={e => e.stopPropagation()}
+                         >
+                            <option value="To Do">To Do</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Done">Done</option>
+                         </select>
+                         <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(t._id); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                            <Trash2 size={18} />
+                         </button>
+                       </div>
                     </div>
                   ))}
                 </div>
@@ -370,19 +485,29 @@ const Dashboard = () => {
            </div>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.5rem' }}>
               {projects.map(p => (
-                <div key={p._id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                   <div>
-                     <h3 style={{ marginBottom: '0.75rem', fontSize: '1.2rem', fontWeight: 800 }}>{p.name}</h3>
-                     <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>{p.description}</p>
-                   </div>
-                   <div>
-                     <div className="flex-between" style={{ marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
-                        <span>Progress</span>
-                        <span>{calculateProjectProgress(p._id)}%</span>
-                     </div>
-                     <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${calculateProjectProgress(p._id)}%` }}></div></div>
-                   </div>
-                </div>
+                 <div key={p._id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '8px' }}>
+                       <button onClick={(e) => { e.stopPropagation(); handleToggleStarProject(p._id, p.isStarred); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: p.isStarred ? '#F59E0B' : '#94A3B8' }}>
+                          <Star fill={p.isStarred ? '#F59E0B' : 'none'} size={20} />
+                       </button>
+                       {user?.role === 'Admin' && (
+                         <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(p._id); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#EF4444' }}>
+                            <Trash2 size={20} />
+                         </button>
+                       )}
+                    </div>
+                    <div>
+                      <h3 style={{ marginBottom: '0.75rem', fontSize: '1.2rem', fontWeight: 800, paddingRight: '60px' }}>{p.name}</h3>
+                      <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>{p.description}</p>
+                    </div>
+                    <div>
+                      <div className="flex-between" style={{ marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
+                         <span>Progress</span>
+                         <span>{calculateProjectProgress(p._id)}%</span>
+                      </div>
+                      <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${calculateProjectProgress(p._id)}%` }}></div></div>
+                    </div>
+                 </div>
               ))}
            </div>
         </div>
@@ -401,10 +526,33 @@ const Dashboard = () => {
                       <CheckSquare size={22} color="var(--accent)"/>
                       <div>
                          <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>{t.title}</div>
-                         <div className="text-muted" style={{ fontSize: '0.85rem' }}>{t.project?.name || 'General Task'}</div>
+                         <div className="text-muted" style={{ fontSize: '0.85rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span>{t.project?.name || 'General Task'}</span>
+                            {t.assignee && <span style={{ background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>👤 {t.assignee.name}</span>}
+                         </div>
                       </div>
                    </div>
-                   <span className={`status-badge status-${t.status?.toLowerCase().replace(' ', '') || 'todo'}`}>{t.status}</span>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                     {t.dueDate && (
+                        <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                           <Clock size={14} /> {new Date(t.dueDate).toLocaleDateString()}
+                        </div>
+                     )}
+                     <select 
+                        value={t.status} 
+                        onChange={(e) => handleStatusChange(t._id, e.target.value)}
+                        className={`status-badge status-${t.status?.toLowerCase().replace(' ', '') || 'todo'}`}
+                        style={{ border: 'none', cursor: 'pointer', outline: 'none' }}
+                        onClick={e => e.stopPropagation()}
+                     >
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                     </select>
+                     <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(t._id); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                        <Trash2 size={18} />
+                     </button>
+                   </div>
                 </div>
               ))}
            </div>
@@ -415,7 +563,7 @@ const Dashboard = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
            <div className="flex-between">
               <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Team Workspace</h2>
-              {user?.role === 'Admin' && <button className="btn-primary">Invite Member</button>}
+              {user?.role === 'Admin' && <button className="btn-primary" onClick={() => setCreateModal({ show: true, type: 'invite' })}>Invite Member</button>}
            </div>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
               {getTeamStats().map(member => (
