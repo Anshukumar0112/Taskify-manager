@@ -28,6 +28,10 @@ app.use(express.static(distPath));
 
 app.get('/ping', (req, res) => res.send('Server is updated and running!'));
 
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
+
 // Catch-all route to serve the frontend for any other request
 app.use((req, res) => {
   if (req.url.startsWith('/api')) return res.status(404).json({ message: 'API route not found' });
