@@ -304,7 +304,7 @@ const Dashboard = () => {
                </h1>
                {showDashboard && (
                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ background: 'var(--primary)', color: 'white', padding: '5px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}><Building size={12}/> Sharda University</div>
+                    <div style={{ background: 'var(--primary)', color: 'white', padding: '5px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}><Building size={12}/> {user?.organization?.name || 'My Workspace'}</div>
                     <div style={{ background: '#E3FCEF', color: '#36B37E', padding: '5px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid #ABF5D1', display: 'flex', alignItems: 'center', gap: '5px' }}>
                        <div style={{ width: '6px', height: '6px', background: '#36B37E', borderRadius: '50%' }}></div>
                        {teamUsers.length || 3} Online
