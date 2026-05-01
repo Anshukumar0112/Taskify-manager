@@ -62,7 +62,19 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {
           </div>
           My Profile
         </NavLink>
-        <button onClick={handleLogout} className="nav-item" style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <button 
+          onClick={handleLogout} 
+          className="nav-item" 
+          style={{ 
+            width: '100%', 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            border: 'none', 
+            cursor: 'pointer', 
+            textAlign: 'left',
+            color: '#F87171',
+            marginTop: '0.5rem'
+          }}
+        >
           <LogOut size={20} /> Logout
         </button>
       </div>
